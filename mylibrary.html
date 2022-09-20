@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>my图书馆</title>
+    <style>
+        .el-table .warning-row {
+            background: oldlace;
+        }
+        .el-table .success-row {
+            background: #f0f9eb;
+        }
+    </style>
+</head>
+<body>
+
+
+<div id="myLibrary">
+<!-- 搜索   表单-->
+    <el-form :inline="true" :model="sebook" class="demo-form-inline">
+        <el-form-item label="书名">
+            <el-input v-model="sebook.bookname" placeholder="书名"></el-input>
+        </el-form-item>
+        <el-form-item label="作者">
+            <el-input v-model="sebook.author" placeholder="作者"></el-input>
+        </el-form-item>
+        <el-form-item label="类型">
+            <el-select v-model="sebook.type" placeholder="类型">
+                <el-option label="文艺" value="文艺"></el-option>
+                <el-option label="历史" value="历史"></el-option>
+                <el-option label="科学" value="科学"></el-option>
+                <el-option label="小说" value="小说"></el-option>
+                <el-option label="生活" value="生活"></el-option>
+                <el-option label="教学" value="教学"></el-option>
+                <el-option label="全部" value=""></el-option>
+            </el-select>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" @click="selectbycondition">查询</el-button>
+        </el-form-item>
+    </el-form>
+
+<!--    新增与批量删除-->
+    <el-row>
+        <el-button type="danger" plain @click="deleteById">批量删除</el-button>
+        <el-button type="primary" plain @click="clear">新增书籍</el-button>
+        <el-dialog
+                title="新增书籍"
+                :visible.sync="insert"
+                width="30%"
+                >
+            <el-form ref="form" :model="book" label-width="80px">
+                <el-form-item label="书名" required="true">
+                    <el-input v-model="book.bookname"></el-input>
+                </el-form-item>
+                <el-form-item label="作者" required="true">
+                    <el-input v-model="book.author"></el-input>
+                </el-form-item>
+                <el-form-item label="出版时间">
+                    <el-col :span="11">
+                        <el-date-picker type="date" value-format="yyyy-MM-dd" placeholder="选择日期" v-model="book.release_time" style="width: 100%;"></el-date-picker>
+                    </el-col>
+                    <el-col class="line" :span="2"></el-col>
+
+                </el-form-item>
+                <el-form-item label="类型">
+                    <el-select v-model="book.type" placeholder="请选择类型">
+                        <el-option label="文艺" value="文艺"></el-option>
+                        <el-option label="历史" value="历史"></el-option>
+                        <el-option label="科学" value="科学"></el-option>
+                        <el-option label="小说" value="小说"></el-option>
+                        <el-option label="生活" value="生活"></el-option>
+                        <el-option label="教学" value="教学"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="剩余数量">
+                    <el-input v-model="book.status"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="addBook">立即创建</el-button>
+                    <el-button @click="insert = false">取消</el-button>
+                </el-form-item>
+            </el-form>
+        </el-dialog>
+    </el-row>
+
+<!--表格-->
+    <template>
+        <el-table
+                :data="books"
+                style="width: 100%"
+                :cell-style="{ textAlign: 'center'}"
+                :header-cell-style="{textAlign: 'center'}"
+                :row-class-name="tableRowClassName"
+                @selection-change="handleSelectionChange">
+            <el-table-column
+                    type="selection"
+                    width="55">
+            </el-table-column>
+            <el-table-column
+                    type="index"
+                    :index="indexMethod"
+                    prop="id"
+                    label="序号"
+            >
+            </el-table-column>
+            <el-table-column
+                    prop="bookname"
+                    label="书名"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="author"
+                    label="姓名"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="release_time"
+                    label="出版时间"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="type"
+                    label="类型"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="status"
+                    label="剩余数量"
+                    >
+            </el-table-column>
+            <el-table-column
+                    prop="operate"
+                    label="操作">
+                <template slot-scope="scope">
+                <el-button type="warning" plain @click="updategetid(scope.row)">修改</el-button>
+                <el-dialog
+                        title="修改书籍信息"
+                        :visible.sync="update"
+                        width="30%">
+                    <el-form ref="form" :model="book" label-width="80px">
+                        <el-form-item label="书名" >
+                            <el-input v-model="book.bookname" ></el-input>
+                        </el-form-item>
+                        <el-form-item label="作者" >
+                            <el-input v-model="book.author" ></el-input>
+                        </el-form-item>
+                        <el-form-item label="出版时间">
+                            <el-col :span="11">
+                                <el-date-picker type="date"  value-format="yyyy-MM-dd" placeholder="选择日期" v-model="book.release_time" style="width: 100%;"></el-date-picker>
+                            </el-col>
+                            <el-col class="line" :span="2"></el-col>
+
+                        </el-form-item>
+                        <el-form-item label="类型">
+                            <el-select v-model="book.type"  placeholder="请选择类型">
+                                <el-option label="文艺" value="文艺"></el-option>
+                                <el-option label="历史" value="历史"></el-option>
+                                <el-option label="科学" value="科学"></el-option>
+                                <el-option label="小说" value="小说"></el-option>
+                                <el-option label="生活" value="生活"></el-option>
+                                <el-option label="教学" value="教学"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="剩余数量">
+                            <el-input v-model="book.status"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+
+                                <el-button type="primary" @click="updatebook(scope.row)">确认</el-button>
+                                <el-button @click="update = false">取消</el-button>
+
+                        </el-form-item>
+                    </el-form>
+                </el-dialog>
+                    <el-button type="danger" @click="deletegetid(scope.row)" >删除</el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </template>
+
+<!--    分页-->
+    <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-sizes="[5, 10, 20, 30]"
+            :page-size="100"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="totalcount">
+    </el-pagination>
+</div>
+
+<script src="js/vue2.js"></script>
+<script src="js/axios-0.19.2.js"></script>
+<script src="element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="element-ui/lib/theme-chalk/index.css">
+
+<script>
+    let id;
+    new Vue({
+        el:"#myLibrary",
+        methods: {
+            //批量删除
+            deleteById(){
+                //console.log(this.multipleSelection);
+                for(let i = 0;i<this.multipleSelection.length;i++)
+                {
+                    let selectids = this.multipleSelection[i];
+                    this.ids[i] = selectids.id;
+                }
+                var _this = this;
+                axios({
+                    method:"post",
+                    url:"http://localhost:8080/myLibrary/DeletebyidsServlet",
+                    data:_this.ids
+                }).then(function (res){
+                    if(res.data=="success")
+                    {
+                        _this.insert = false;
+                        _this.selectAll();
+
+                        _this.$message({
+                            message:'删除成功',
+                            type:'success'
+                        })
+                    }
+                })
+            },
+            //复选框执行
+            handleSelectionChange(val) {
+                this.multipleSelection = val;
+            },
+            //add方法清空缓存
+            clear(){
+                this.insert = true;
+                this.book.bookname = null;
+                this.book.author = null;
+                this.book.release_time = null;
+                this.book.type = null;
+                this.book.status = null;
+            },
+            //查询所有(在更新数据之后)
+            selectAll(){
+                // var _this = this;
+                // axios({
+                //     method:"get",
+                //     url:"http://localhost:8080/myLibrary/SelectAllServlet"
+                // }).then(function (res){
+                //     _this.books = res.data;
+                // })
+                var _this = this;
+                axios({
+                    method:"post",
+                    url:"http://localhost:8080/myLibrary/SelectbyconditionServlet?currentpage="+_this.currentPage+"&pagesize="+_this.pagesize,
+                    data:this.sebook
+                }).then(function (res){
+                    _this.books = res.data.rows;
+                    _this.totalcount = res.data.totalcount;
+                })
+            },
+            //删除数据获取id
+            deletegetid(row) {
+                var _this = this;
+                this.id = row.id;
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    _this.deletebook();
+                    this.$message({
+                        type: 'success',
+                        message: '删除成功!'
+                    });
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            tempdeletegetid(row){
+                this.id = row.id;
+                this.delete = true;
+            },
+            //修改获取id且获取原数据
+            updategetid(row){
+                this.update = true;
+                id = row.id;
+                this.book.bookname = row.bookname;
+                this.book.author = row.author;
+                this.book.release_time = row.release_time;
+                this.book.type = row.type;
+                this.book.status = row.status;
+            },
+            //分页方法
+            handleSizeChange(val) {
+                this.pagesize = val;
+                this.selectAll();
+            },
+            handleCurrentChange(val) {
+                //console.log(`当前页: ${val}`);
+                this.currentPage = val;
+                this.selectAll();
+            },
+            tableRowClassName({row, rowIndex}) {
+                if (rowIndex === 1) {
+                    return 'warning-row';
+                } else if (rowIndex === 3) {
+                    return 'success-row';
+                }
+                return '';
+            },
+            //序号方法
+            indexMethod(index) {
+                // <!--                    type="index"-->
+                // <!--                    :index="indexMethod"-->
+
+                return index+1;
+            },
+            //查询方法
+            selectbycondition() {
+                console.log(this.book);
+                this.selectAll();
+            },
+            //删除数据
+            deletebook(){
+                this.book.id = this.id;
+                var _this = this;
+                axios({
+                    method:"post",
+                    url:"http://localhost:8080/myLibrary/DeletebookServlet",
+                    data:_this.book
+                }).then(function (res){
+                    if(res.data=="success")
+                    {
+                        _this.selectAll();
+                    }
+                })
+            },
+            //修改数据
+            updatebook(row){
+                //@click="updatebook(scope.row)"
+                this.book.id = id;
+                var _this = this;
+                axios({
+                    method:"post",
+                    url:"http://localhost:8080/myLibrary/UpdatebookServlet",
+                    data:_this.book
+                }).then(function (res){
+                    if(res.data=="success")
+                    {
+                        _this.update = false;
+                        _this.selectAll();
+                        _this.$message({
+                            message:'修改成功',
+                            type:'success'
+                        })
+                    }
+                })
+            },
+            addBook(){
+                var _this = this;
+                axios({
+                    method:"post",
+                    url:"http://localhost:8080/myLibrary/AddbookServlet",
+                    data:_this.book
+                }).then(function (res){
+                    if(res.data=="success")
+                    {
+                        _this.insert = false;
+                        _this.selectAll();
+                        _this.$message({
+                            message:'添加成功',
+                            type:'success'
+                        })
+                    }
+                })
+            }
+        },
+        data() {
+            return {
+                //搜索表单
+                sebook:{
+                    id:'',
+                    bookname: '',
+                    author: '',
+                    release_time: '',
+                    type: '',
+                    status: ''
+                },
+                //总条数
+                totalcount:100,
+                //被选中的id
+                ids:[],
+                //复选框模型
+                multipleSelection:[],
+                //删除弹框
+                delete: false,
+                //id
+                id,
+                //修改
+                editbook:{
+                    id:'',
+                    bookname: '',
+                    author: '',
+                    release_time: '',
+                    type: '',
+                    status: ''
+                },
+                //分页工具条
+                pagesize:5,
+                currentPage: 1,
+                //新增书籍
+                book: {
+                    id:'',
+                    bookname: '',
+                    author: '',
+                    release_time: '',
+                    type: '',
+                    status: ''
+                },
+                //修改表单是否被打开
+                update: false,
+                //新增表单是否被打开
+                insert: false,
+                //查询表单
+                select: {
+                    bookname: '',
+                    author: '',
+                    type: ''
+                },
+                //所有数据
+                books: [{
+                    id:'1',
+                    bookname: '吕氏春秋',
+                    author: '吕子乔',
+                    release_time:'2003-03-02',
+                    type:'忽悠人的',
+                    status: '5'
+                }, {
+                    id:'1',
+                    bookname: '吕氏春秋',
+                    author: '吕子乔',
+                    release_time:'2003-03-02',
+                    type:'忽悠人的',
+                    status: '5'
+                }, {
+                    id:'1',
+                    bookname: '吕氏春秋',
+                    author: '吕子乔',
+                    release_time:'2003-03-02',
+                    type:'忽悠人的',
+                    status: '5'
+                }, {
+                    id:'1',
+                    bookname: '吕氏春秋',
+                    author: '吕子乔',
+                    release_time:'2003-03-02',
+                    type:'忽悠人的',
+                    status: '5'
+                }]
+            }
+        },
+        mounted(){
+            this.selectAll();
+        }
+    })
+</script>
+
+</body>
+</html>

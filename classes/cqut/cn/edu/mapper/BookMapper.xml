@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cqut.cn.edu.mapper.BookMapper">
+    <select id="selectBook" resultType="cqut.cn.edu.pojo.Book">
+        select * from book
+    </select>
+
+    <delete id="deletebyids">
+        delete from book where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <select id="selectbycondition" resultType="cqut.cn.edu.pojo.Book">
+        select *
+        from book
+        <where>
+        <if test="book != null">
+            <if test="book.bookname != null and book.bookname!=''">
+                and bookname like #{book.bookname}
+            </if>
+            <if test="book.author != null and book.author!=''">
+                and author like #{book.author}
+            </if>
+            <if test="book.type != null and book.type!=''">
+                and type = #{book.type}
+            </if>
+        </if>
+        </where>
+        limit #{begin},#{size}
+    </select>
+
+    <select id="selectcountbycondition" resultType="java.lang.Integer">
+        select count(*)
+        from book
+        <where>
+            <if test="book != null">
+                <if test="book.bookname != null and book.bookname!=''">
+                    and bookname like #{book.bookname}
+                </if>
+                <if test="book.author != null and book.author!=''">
+                    and author like #{book.author}
+                </if>
+                <if test="book.type != null and book.type!=''">
+                    and type = #{book.type}
+                </if>
+            </if>
+
+        </where>
+    </select>
+</mapper>
